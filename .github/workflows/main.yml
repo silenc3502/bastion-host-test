@@ -43,16 +43,18 @@ jobs:
           echo "테스트 가즈아!!!" > test.txt
           ls
           
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${{ secrets.BASTION_HOST_PRIVATE_KEY }}"
+          ssh-add - <<< "${{ secrets.PRIVATE_EC2_PRIVATE_KEY }}"
+
           scp -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
-          -i ${{ secrets.BASTION_HOST_PEM_KEY }} \
           test.txt ec2-user@${{ secrets.BASTION_HOST_IP }}:~/
 
           ssh -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
-          -i ${{ secrets.BASTION_HOST_PEM_KEY }} \
           -J ec2-user@${{ secrets.BASTION_HOST_IP }} \
-          "scp -i ${{ secrets.PRIVATE_EC2_PEM_KEY }} /home/ec2-user/test.txt ec2-user@${{ secrets.PRIVATE_EC2_IP }}:~/"
+          "scp /home/ec2-user/test.txt ec2-user@${{ secrets.PRIVATE_EC2_IP }}:~/"
         continue-on-error: true
           
       - name: Revoke GitHub Actions IP in Bastion Host Security Group
