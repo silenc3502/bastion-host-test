@@ -61,7 +61,7 @@ jobs:
             -i bastion.pem \
             test.txt ec2-user@"$bastion_host_ip":~/
 
-          ssh -o StrictHostKeyChecking=accept-new \
+          ssh -v -o StrictHostKeyChecking=no \
             -i bastion.pem \
             -J ec2-user@"$bastion_host_ip" \
             "scp -i private.pem /home/ec2-user/test.txt ec2-user@$private_ec2_ip:~/"
