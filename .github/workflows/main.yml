@@ -13,6 +13,10 @@ jobs:
         run: |
           ip=$(curl -s https://api.ipify.org)
           echo "GitHub Actions IP: $ip"
+          
+      - name: Check to print IP
+        run: |
+          echo ${{ steps.ip.outputs }}
         
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
