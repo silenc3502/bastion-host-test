@@ -22,6 +22,20 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
+          
+      - name: Get Parameter Value (Bastion Host PEM Key)
+        id: get-bastion-pem-key
+        run: |
+          parameter_name="BASTION_HOST_PEM_KEY"
+          parameter_value=$(aws ssm get-parameter --name $parameter_name --with-decryption --query "Parameter.Value" --output text)
+          echo "::set-output name=bastion-pem-key::$parameter_value"
+
+      - name: Get Parameter Value (Private EC2 PEM Key)
+        id: get-private-ec2-pem-key
+        run: |
+          parameter_name="PRIVATE_EC2_PEM_KEY"
+          parameter_value=$(aws ssm get-parameter --name $parameter_name --with-decryption --query "Parameter.Value" --output text)
+          echo "::set-output name=private-ec2-pem-key::$parameter_value"
         
       - name: Authorize GitHub Actions IP in Bastion Host Security Group
         run: |
@@ -43,18 +57,21 @@ jobs:
           echo "테스트 가즈아!" > test.txt
           ls
           
-          eval "$(ssh-agent -s)"
-          ssh-add - <<< "${{ secrets.BASTION_HOST_PRIVATE_KEY }}"
-          ssh-add - <<< "${{ secrets.PRIVATE_EC2_PRIVATE_KEY }}"
+          bastion_pem_key="${{ steps.get-bastion-pem-key.outputs.bastion-pem-key }}"
+          private_ec2_pem_key="${{ steps.get-private-ec2-pem-key.outputs.private-ec2-pem-key }}"
+          bastion_host_ip="${{ secrets.BASTION_HOST_IP }}"
+          private_ec2_ip="${{ secrets.PRIVATE_EC2_IP }}"
 
           scp -o StrictHostKeyChecking=no \
-          -o UserKnownHostsFile=/dev/null \
-          test.txt ec2-user@${{ secrets.BASTION_HOST_IP }}:~/
+            -o UserKnownHostsFile=/dev/null \
+            -i "$bastion_pem_key" \
+            test.txt ec2-user@"$bastion_host_ip":~/
 
           ssh -o StrictHostKeyChecking=no \
-          -o UserKnownHostsFile=/dev/null \
-          -J ec2-user@${{ secrets.BASTION_HOST_IP }} \
-          "scp /home/ec2-user/test.txt ec2-user@${{ secrets.PRIVATE_EC2_IP }}:~/"
+            -o UserKnownHostsFile=/dev/null \
+            -i "$bastion_pem_key" \
+            -J ec2-user@"$bastion_host_ip" \
+            "scp -i $private_ec2_pem_key /home/ec2-user/test.txt ec2-user@$private_ec2_ip:~/"
         continue-on-error: true
           
       - name: Revoke GitHub Actions IP in Bastion Host Security Group
@@ -69,4 +86,9 @@ jobs:
           aws ec2 revoke-security-group-ingress \
           --group-id ${{ secrets.PRIVATE_EC2_SECURITY_GROUP_ID }} \
           --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+        continue-on-error: true
+        
+      - name: Clean up
+        run: |
+          rm test.txt
         continue-on-error: true
