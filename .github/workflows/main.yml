@@ -40,7 +40,7 @@ jobs:
           set -e
           set -x
           
-          echo "테스트 가즈아!!!" > test.txt
+          echo "테스트 가즈아!" > test.txt
           ls
           
           eval "$(ssh-agent -s)"
