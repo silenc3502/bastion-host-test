@@ -3,12 +3,6 @@ name: Just for test that send test.txt to private ec2 instance through bastion h
 on:
   push:
     branches: [ "main" ]
-    
-env:
-  BASTION_HOST_PEM_KEY: ${{ secrets.BASTION_HOST_PEM_KEY }}
-  PRIVATE_EC2_PEM_KEY: ${{ secrets.PRIVATE_EC2_PEM_KEY }}
-  BASTION_HOST_IP: ${{ secrets.BASTION_HOST_IP }}
-  PRIVATE_EC2_IP: ${{ secrets.PRIVATE_EC2_IP }}
 
 jobs:
   just-send:
@@ -47,14 +41,14 @@ jobs:
           
           scp -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
-          -i $BASTION_HOST_PEM_KEY \
-          test.txt ec2-user@${{ env.BASTION_HOST_IP }}:~/
+          -i ${{ secrets.BASTION_HOST_PEM_KEY }} \
+          test.txt ec2-user@${{ secrets.BASTION_HOST_IP }}:~/
 
           ssh -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
-          -i $BASTION_HOST_PEM_KEY \
-          -J ec2-user@${{ env.BASTION_HOST_IP }} \
-          "scp -i $PRIVATE_EC2_PEM_KEY /home/ec2-user/test.txt ec2-user@${{ env.PRIVATE_EC2_IP }}:~/"
+          -i ${{ secrets.BASTION_HOST_PEM_KEY }} \
+          -J ec2-user@${{ secrets.BASTION_HOST_IP }} \
+          "scp -i ${{ secrets.PRIVATE_EC2_PEM_KEY }} /home/ec2-user/test.txt ec2-user@${{ secrets.PRIVATE_EC2_IP }}:~/"
         continue-on-error: true
           
       - name: Revoke GitHub Actions IP in Bastion Host Security Group
