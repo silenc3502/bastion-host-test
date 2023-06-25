@@ -25,5 +25,8 @@ jobs:
           set -e
           set -x
           
+          echo "테스트 가즈아!!!" > test.txt
+          ls
+          
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $BASTION_PRIVATE_KEY test.txt ec2-user@${{ env.BASTION_HOST_IP }}:~/
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $BASTION_PRIVATE_KEY -J ec2-user@${{ env.BASTION_HOST_IP }} "scp -i $PRIVATE_EC2_KEY /home/ec2-user/test.txt ec2-user@${{ env.PRIVATE_EC2_IP }}:~/"
