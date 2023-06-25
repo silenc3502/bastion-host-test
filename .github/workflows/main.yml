@@ -16,6 +16,7 @@ jobs:
     steps:
       - name: Check where is it
         run: |
+          cd $GITHUB_WORKSPACE
           pwd
           ls
           
