@@ -14,11 +14,28 @@ jobs:
   just-send:
     runs-on: ubuntu-latest
     steps:
-      - name: Check where is it
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+        
+      - name: Get Github Actions IP
+        id: ip
+        uses: haythem/public-ip@v1.2
+        
+      - name: Authorize GitHub Actions IP in Bastion Host Security Group
         run: |
-          cd $GITHUB_WORKSPACE
-          pwd
-          ls
+          aws ec2 authorize-security-group-ingress \
+          --group-id ${{ secrets.BASTION_SECURITY_GROUP_ID }} \
+          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
+
+      - name: Authorize Bastion Host IP in Private EC2 Security Group
+        run: |
+          aws ec2 authorize-security-group-ingress \
+          --group-id ${{ secrets.PRIVATE_EC2_SECURITY_GROUP_ID }} \
+          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
           
       - name: Send test.txt to private ec2
         run: |
@@ -38,4 +55,18 @@ jobs:
           -i $BASTION_HOST_PEM_KEY \
           -J ec2-user@${{ env.BASTION_HOST_IP }} \
           "scp -i $PRIVATE_EC2_PEM_KEY /home/ec2-user/test.txt ec2-user@${{ env.PRIVATE_EC2_IP }}:~/"
+        continue-on-error: true
           
+      - name: Revoke GitHub Actions IP in Bastion Host Security Group
+        run: |
+          aws ec2 revoke-security-group-ingress \
+          --group-id ${{ secrets.BASTION_SECURITY_GROUP_ID }} \
+          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
+        continue-on-error: true
+          
+      - name: Revoke Bastion Host IP in Private EC2 Security Group
+        run: |
+          aws ec2 revoke-security-group-ingress \
+          --group-id ${{ secrets.PRIVATE_EC2_SECURITY_GROUP_ID }} \
+          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
+        continue-on-error: true
