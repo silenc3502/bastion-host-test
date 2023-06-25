@@ -29,13 +29,13 @@ jobs:
         run: |
           aws ec2 authorize-security-group-ingress \
           --group-id ${{ secrets.BASTION_SECURITY_GROUP_ID }} \
-          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
+          --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
 
       - name: Authorize Bastion Host IP in Private EC2 Security Group
         run: |
           aws ec2 authorize-security-group-ingress \
           --group-id ${{ secrets.PRIVATE_EC2_SECURITY_GROUP_ID }} \
-          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
+          --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
           
       - name: Send test.txt to private ec2
         run: |
@@ -61,12 +61,12 @@ jobs:
         run: |
           aws ec2 revoke-security-group-ingress \
           --group-id ${{ secrets.BASTION_SECURITY_GROUP_ID }} \
-          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
+          --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
         continue-on-error: true
           
       - name: Revoke Bastion Host IP in Private EC2 Security Group
         run: |
           aws ec2 revoke-security-group-ingress \
           --group-id ${{ secrets.PRIVATE_EC2_SECURITY_GROUP_ID }} \
-          --protocol tcp --port 22 --cidr ${{ steps.get-ip.outputs.public-ip }}/32
+          --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
         continue-on-error: true
