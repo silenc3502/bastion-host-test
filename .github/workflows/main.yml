@@ -27,22 +27,11 @@ jobs:
         run: |
           echo "${{ secrets.BASTION_HOST_PEM_KEY }}" > bastion.pem
           chmod 400 bastion.pem
-          
-      - name: Create Private PEM Key File
-        run: |
-          echo "${{ secrets.PRIVATE_EC2_PEM_KEY }}" > private.pem
-          chmod 400 private.pem
         
       - name: Authorize GitHub Actions IP in Bastion Host Security Group
         run: |
           aws ec2 authorize-security-group-ingress \
           --group-id ${{ secrets.BASTION_SECURITY_GROUP_ID }} \
-          --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
-
-      - name: Authorize Bastion Host IP in Private EC2 Security Group
-        run: |
-          aws ec2 authorize-security-group-ingress \
-          --group-id ${{ secrets.PRIVATE_EC2_SECURITY_GROUP_ID }} \
           --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
           
       - name: Get SSH host keys
@@ -60,17 +49,11 @@ jobs:
           ls
           
           bastion_host_ip="${{ secrets.BASTION_HOST_IP }}"
-          private_ec2_ip="${{ secrets.PRIVATE_EC2_IP }}"
 
           scp -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -i bastion.pem \
             test.txt ec2-user@"$bastion_host_ip":~/
-
-          ssh -v -o StrictHostKeyChecking=no \
-            -i bastion.pem \
-            -J ec2-user@"$bastion_host_ip" \
-            "scp -i private.pem /home/ec2-user/test.txt ec2-user@$private_ec2_ip:~/"
         continue-on-error: true
           
       - name: Revoke GitHub Actions IP in Bastion Host Security Group
@@ -79,17 +62,9 @@ jobs:
           --group-id ${{ secrets.BASTION_SECURITY_GROUP_ID }} \
           --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
         continue-on-error: true
-          
-      - name: Revoke Bastion Host IP in Private EC2 Security Group
-        run: |
-          aws ec2 revoke-security-group-ingress \
-          --group-id ${{ secrets.PRIVATE_EC2_SECURITY_GROUP_ID }} \
-          --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
-        continue-on-error: true
         
       - name: Clean up
         run: |
           rm test.txt
           rm bastion.pem
-          rm private.pem
         continue-on-error: true
