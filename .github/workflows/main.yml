@@ -53,7 +53,7 @@ jobs:
           scp -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -i bastion.pem \
-            test.txt ec2-user@"$bastion_host_ip":~/
+            test.txt ec2-user@"$bastion_host_ip":~/deploy/
         continue-on-error: true
           
       - name: Revoke GitHub Actions IP in Bastion Host Security Group
