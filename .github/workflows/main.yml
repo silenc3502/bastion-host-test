@@ -14,7 +14,6 @@ jobs:
           
       - name: Get GitHub Actions IP
         run: |
-          echo "GitHub Actions IP: ${{ github.event.client_payload.runner.ip }}"
           echo "haythem ip: ${{ steps.ip.outputs.ipv4 }}"
         
       - name: Configure AWS Credentials
@@ -42,9 +41,6 @@ jobs:
           
       - name: Send test.txt to private ec2
         run: |
-          set -e
-          set -x
-          
           echo "테스트 가즈아!" > test.txt
           ls
           
@@ -54,6 +50,18 @@ jobs:
             -o UserKnownHostsFile=/dev/null \
             -i bastion.pem \
             test.txt ec2-user@"$bastion_host_ip":~/deploy/
+        continue-on-error: true
+        
+      - name: Send send.txt to private ec2
+        run: |
+          echo "1" > send.txt
+          
+          bastion_host_ip="${{ secrets.BASTION_HOST_IP }}"
+
+          scp -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -i bastion.pem \
+            send.txt ec2-user@"$bastion_host_ip":~/finish/
         continue-on-error: true
           
       - name: Revoke GitHub Actions IP in Bastion Host Security Group
@@ -67,4 +75,5 @@ jobs:
         run: |
           rm test.txt
           rm bastion.pem
+          rm send.txt
         continue-on-error: true
