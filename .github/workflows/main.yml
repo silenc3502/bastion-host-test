@@ -12,9 +12,10 @@ jobs:
         id: ip
         uses: haythem/public-ip@v1.2
           
-      - name: Check to print IP
+      - name: Get GitHub Actions IP
         run: |
-          echo ${{ steps.ip.outputs }}
+          echo "GitHub Actions IP: ${{ github.event.client_payload.runner.ip }}"
+          echo "haythem ip: ${{ steps.ip.outputs.ipv4 }}"
         
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
